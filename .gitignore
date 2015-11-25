@@ -7,6 +7,8 @@
 *.dex
 
 # Java class files
+/arduino-Client.iws
+/arduino-Client.ipr
 *.class
 
 # Generated files
