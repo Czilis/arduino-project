@@ -1,121 +1,58 @@
 package uz.embeddedsystems.arduino_client.client;
 
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.Context;
-import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Toast;
 
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
+import java.util.Set;
 
-public class MainActivity extends Activity {
-    public final static String IP_ADDRESS = "ip_address";
-    public final static String PORT = "port";
-    @Bind(R.id.btn_connect)
-    Button btnConnect;
-    @Bind(R.id.txt_ip_address)
-    EditText txtIpAddress;
-    @Bind(R.id.txt_port)
-    EditText txtPort;
-    private boolean ipInserted = false;
-    private boolean portInserted = false;
+public class MainActivity extends Activity implements ManageAddressesFragment.Listener{
+    ManageAddressesFragment fragmentManageAddresses;
+    ConnectFragment fragmetnConnect;
+    final FragmentManager fragmentManager = getFragmentManager();
 
-    @OnClick(R.id.btn_connect)
-    public void onButtonConnectClicked() {
-        final Intent intent = new Intent(this, ConfigurationActivity.class);
-        intent.putExtra(IP_ADDRESS, txtIpAddress.getText().toString());
-        intent.putExtra(PORT, txtPort.getText().toString());
-        if (isWifiConnected()){
-            startActivity(intent);
-        } else {
-            Toast.makeText(this, "No connection!", Toast.LENGTH_SHORT).show();
-        }
+    @Override
+    public void onAddressAdded() {
+        showProperFragment();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        ButterKnife.bind(this);
-        setListener();
-        isWifiConnected();
+        fragmentManageAddresses = new ManageAddressesFragment();
+        fragmetnConnect = new ConnectFragment();
+        fragmentManageAddresses.setListener(this);
+        showProperFragment();
     }
 
-    private void checkIfButtonCanChangeState(){
-        if (ipInserted && portInserted) {
-            btnConnect.setEnabled(true);
+
+    private void showProperFragment() {
+        if (isAnyPairStored()) {
+            setActiveFragmentTo(fragmetnConnect);
         } else {
-            btnConnect.setEnabled(false);
+            setActiveFragmentTo(fragmentManageAddresses);
         }
     }
 
-    private void setListener() {
-        txtIpAddress.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                if (editable.length() >= 7){
-                    ipInserted = true;
-                    checkIfButtonCanChangeState();
-                } else {
-                    ipInserted = false;
-                    checkIfButtonCanChangeState();
-                }
-            }
-        });
-
-        txtPort.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                if (editable.length() == 4 ) {
-                    portInserted = true;
-                    checkIfButtonCanChangeState();
-                } else {
-                    portInserted = false;
-                    checkIfButtonCanChangeState();
-                }
-            }
-        });
+    private void setActiveFragmentTo(final Fragment fragment) {
+        final FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.layout_fragment_container, fragment);
+        fragmentTransaction.commit();
     }
 
-    private boolean isWifiConnected() {
-        ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        if (mWifi.isConnected()) {
-            return true;
-        } else {
-            return false;
-        }
+    private boolean isAnyPairStored(){
+        final Pair<Set, Set> savedPair = SharedPreferencesUtils.getSavedPair(this);
+        return !savedPair.first.isEmpty() && !savedPair.second.isEmpty();
     }
 
     @Override
@@ -134,7 +71,11 @@ public class MainActivity extends Activity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.check_wifi_connection) {
-            return isWifiConnected();
+
+//            return isWifiConnected();
+        }
+        if (id == R.id.add_another_address) {
+            setActiveFragmentTo(fragmentManageAddresses);
         }
 
         return super.onOptionsItemSelected(item);

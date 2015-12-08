@@ -8,9 +8,7 @@ import android.widget.Switch;
 
 import butterknife.Bind;
 
-/**
- * Created by Patryk on 26.11.2015.
- */
+
 public class ConfigurationActivity extends Activity {
 
     @Bind(R.id.switch_blind1)
@@ -27,9 +25,14 @@ public class ConfigurationActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_configuration);
-        Bundle extras = getIntent().getExtras();
-        ipAddress = extras.get(MainActivity.IP_ADDRESS).toString();
-        port = extras.get(MainActivity.PORT).toString();
+//        Bundle extras = getIntent().getExtras();
+//        if (!extras.equals(null) && !extras.isEmpty()) {
+//            ipAddress = extras.get(MainActivity.IP_ADDRESS).toString();
+//            port = extras.get(MainActivity.PORT).toString();
+//        }
+
+
+
 
     }
 

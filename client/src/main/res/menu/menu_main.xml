@@ -1,8 +1,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-      xmlns:tools="http://schemas.android.com/tools"
-      tools:context=".MainActivity">
-    <item android:id="@+id/check_wifi_connection"
-          android:title="@string/verify_connection"
-          android:orderInCategory="100"
-          android:showAsAction="never"/>
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity">
+    <item
+        android:id="@+id/check_wifi_connection"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/verify_connection" />
+    <item
+        android:id="@+id/add_another_address"
+        android:title="Add another address" />
 </menu>
