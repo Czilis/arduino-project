@@ -1,10 +1,8 @@
 package uz.embeddedsystems.arduino_client.client;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -18,6 +16,9 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
+import java.io.IOException;
+import java.net.UnknownHostException;
+
 public class MainActivity extends Activity {
     public final static String IP_ADDRESS = "ip_address";
     public final static String PORT = "port";
@@ -27,16 +28,32 @@ public class MainActivity extends Activity {
     EditText txtIpAddress;
     @Bind(R.id.txt_port)
     EditText txtPort;
+    private Intent nextActivity;
     private boolean ipInserted = false;
     private boolean portInserted = false;
 
     @OnClick(R.id.btn_connect)
     public void onButtonConnectClicked() {
-        final Intent intent = new Intent(this, ConfigurationActivity.class);
-        intent.putExtra(IP_ADDRESS, txtIpAddress.getText().toString());
-        intent.putExtra(PORT, txtPort.getText().toString());
-        if (isWifiConnected()){
-            startActivity(intent);
+        nextActivity = new Intent(this, ConfigurationActivity.class);
+        final String ip_address = txtIpAddress.getText().toString();
+        final String port = txtPort.getText().toString();
+
+        if (NetworkUtils.isWifiConnected(this)) {
+            new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        ArduinoConnection.getInstance().connect(ip_address, port);
+
+                    } catch (UnknownHostException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }.start();
+            startActivity(nextActivity);
         } else {
             Toast.makeText(this, "No connection!", Toast.LENGTH_SHORT).show();
         }
@@ -49,10 +66,10 @@ public class MainActivity extends Activity {
 
         ButterKnife.bind(this);
         setListener();
-        isWifiConnected();
+        NetworkUtils.isWifiConnected(this);
     }
 
-    private void checkIfButtonCanChangeState(){
+    private void checkIfButtonCanChangeState() {
         if (ipInserted && portInserted) {
             btnConnect.setEnabled(true);
         } else {
@@ -74,7 +91,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                if (editable.length() >= 7){
+                if (editable.length() >= 7) {
                     ipInserted = true;
                     checkIfButtonCanChangeState();
                 } else {
@@ -97,7 +114,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                if (editable.length() == 4 ) {
+                if (editable.length() == 4) {
                     portInserted = true;
                     checkIfButtonCanChangeState();
                 } else {
@@ -108,15 +125,6 @@ public class MainActivity extends Activity {
         });
     }
 
-    private boolean isWifiConnected() {
-        ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        if (mWifi.isConnected()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -134,9 +142,10 @@ public class MainActivity extends Activity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.check_wifi_connection) {
-            return isWifiConnected();
+            return NetworkUtils.isWifiConnected(this);
         }
 
         return super.onOptionsItemSelected(item);
     }
+
 }
