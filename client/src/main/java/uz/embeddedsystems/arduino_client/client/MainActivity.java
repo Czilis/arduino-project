@@ -1,10 +1,9 @@
 package uz.embeddedsystems.arduino_client.client;
 
 import android.app.Activity;
-import android.content.Context;
+import android.app.ProgressDialog;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -18,25 +17,35 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
+import java.io.IOException;
+import java.net.UnknownHostException;
+
 public class MainActivity extends Activity {
-    public final static String IP_ADDRESS = "ip_address";
-    public final static String PORT = "port";
+    public static final String IP_ADDRESS = "ip_address";
+    public static final String PORT = "port";
+
     @Bind(R.id.btn_connect)
     Button btnConnect;
     @Bind(R.id.txt_ip_address)
     EditText txtIpAddress;
     @Bind(R.id.txt_port)
     EditText txtPort;
+
+    private Intent nextActivity;
     private boolean ipInserted = false;
     private boolean portInserted = false;
+    private ArduinoConnection connection;
+    private ProgressDialog connectingDialog;
 
     @OnClick(R.id.btn_connect)
     public void onButtonConnectClicked() {
-        final Intent intent = new Intent(this, ConfigurationActivity.class);
-        intent.putExtra(IP_ADDRESS, txtIpAddress.getText().toString());
-        intent.putExtra(PORT, txtPort.getText().toString());
-        if (isWifiConnected()){
-            startActivity(intent);
+        nextActivity = new Intent(this, ConfigurationActivity.class);
+        final String ip_address = txtIpAddress.getText().toString();
+        final String port = txtPort.getText().toString();
+
+        if (NetworkUtils.isWifiConnected(this)) {
+            connectingDialog = ProgressDialog.show(this, "Connecting with server...", "Please wait ...", true);
+            connection.connect(ip_address, port);
         } else {
             Toast.makeText(this, "No connection!", Toast.LENGTH_SHORT).show();
         }
@@ -46,13 +55,22 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         ButterKnife.bind(this);
+
+        connection = ArduinoConnection.getInstance();
+        connection.setConnectedCallback(new ArduinoConnection.Callback() {
+            @Override
+            public void execute() {
+                connectingDialog.dismiss();
+                if (nextActivity != null)
+                    startActivity(nextActivity);
+            }
+        });
+
         setListener();
-        isWifiConnected();
     }
 
-    private void checkIfButtonCanChangeState(){
+    private void checkIfButtonCanChangeState() {
         if (ipInserted && portInserted) {
             btnConnect.setEnabled(true);
         } else {
@@ -74,7 +92,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                if (editable.length() >= 7){
+                if (editable.length() >= 7) {
                     ipInserted = true;
                     checkIfButtonCanChangeState();
                 } else {
@@ -97,7 +115,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                if (editable.length() == 4 ) {
+                if (editable.length() == 4) {
                     portInserted = true;
                     checkIfButtonCanChangeState();
                 } else {
@@ -106,16 +124,6 @@ public class MainActivity extends Activity {
                 }
             }
         });
-    }
-
-    private boolean isWifiConnected() {
-        ConnectivityManager connManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-        if (mWifi.isConnected()) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
@@ -134,9 +142,10 @@ public class MainActivity extends Activity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.check_wifi_connection) {
-            return isWifiConnected();
+            return NetworkUtils.isWifiConnected(this);
         }
 
         return super.onOptionsItemSelected(item);
     }
+
 }
