@@ -1,6 +1,7 @@
 package uz.embeddedsystems.arduino_client.client;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -20,17 +21,21 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 
 public class MainActivity extends Activity {
-    public final static String IP_ADDRESS = "ip_address";
-    public final static String PORT = "port";
+    public static final String IP_ADDRESS = "ip_address";
+    public static final String PORT = "port";
+
     @Bind(R.id.btn_connect)
     Button btnConnect;
     @Bind(R.id.txt_ip_address)
     EditText txtIpAddress;
     @Bind(R.id.txt_port)
     EditText txtPort;
+
     private Intent nextActivity;
     private boolean ipInserted = false;
     private boolean portInserted = false;
+    private ArduinoConnection connection;
+    private ProgressDialog connectingDialog;
 
     @OnClick(R.id.btn_connect)
     public void onButtonConnectClicked() {
@@ -39,21 +44,8 @@ public class MainActivity extends Activity {
         final String port = txtPort.getText().toString();
 
         if (NetworkUtils.isWifiConnected(this)) {
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        ArduinoConnection.getInstance().connect(ip_address, port);
-
-                    } catch (UnknownHostException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-            }.start();
-            startActivity(nextActivity);
+            connectingDialog = ProgressDialog.show(this, "Connecting with server...", "Please wait ...", true);
+            connection.connect(ip_address, port);
         } else {
             Toast.makeText(this, "No connection!", Toast.LENGTH_SHORT).show();
         }
@@ -63,10 +55,19 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         ButterKnife.bind(this);
+
+        connection = ArduinoConnection.getInstance();
+        connection.setConnectedCallback(new ArduinoConnection.Callback() {
+            @Override
+            public void execute() {
+                connectingDialog.dismiss();
+                if (nextActivity != null)
+                    startActivity(nextActivity);
+            }
+        });
+
         setListener();
-        NetworkUtils.isWifiConnected(this);
     }
 
     private void checkIfButtonCanChangeState() {
@@ -124,7 +125,6 @@ public class MainActivity extends Activity {
             }
         });
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

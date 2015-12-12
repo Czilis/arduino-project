@@ -1,11 +1,13 @@
 package uz.embeddedsystems.arduino_client.client;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 
-
+import android.widget.Toast;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
@@ -21,8 +23,8 @@ public class ConfigurationActivity extends Activity {
     @Bind(R.id.switch_blind3)
     Switch switchBlind3;
 
-    private String ipAddress;
-    private String port;
+    private ProgressDialog sendingDialog;
+    private ArduinoConnection connection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,53 +32,77 @@ public class ConfigurationActivity extends Activity {
         setContentView(R.layout.activity_configuration);
         ButterKnife.bind(this);
 
-        while (ArduinoConnection.getInstance().getBindsStates().equals("")) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        };
-
-        setSwitches(ArduinoConnection.getInstance().getBindsStates());
+        connection = ArduinoConnection.getInstance();
+        setCallbacks();
+        setSwitches(connection.getBindsStates());
 
         setListeners();
+    }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        connection.disconnect();
     }
 
     private void setSwitches(String bindsStates) {
-        char[] arr = bindsStates.toCharArray();
-        if (arr[0] == 'O')
-            switchBlind1.setChecked(true);
+        char[] states = bindsStates.toCharArray();
+        setSwitch(switchBlind1, states[0]);
+        setSwitch(switchBlind2, states[1]);
+        setSwitch(switchBlind3, states[2]);
+    }
+
+    private void setSwitch(Switch switchBlind, char state) {
+        if (state == 'O')
+            switchBlind.setChecked(true);
         else
-            switchBlind1.setChecked(false);
-        if (arr[1] == 'O')
-            switchBlind2.setChecked(true);
-        else
-            switchBlind2.setChecked(false);
-        if (arr[2] == 'O')
-            switchBlind3.setChecked(true);
-        else
-            switchBlind3.setChecked(false);
+            switchBlind.setChecked(false);
     }
 
     private void setListeners() {
-        CompoundButton.OnCheckedChangeListener listener = new MyChangeListener();
-        switchBlind1.setOnCheckedChangeListener(listener);
-        switchBlind2.setOnCheckedChangeListener(listener);
-        switchBlind3.setOnCheckedChangeListener(listener);
+        switchBlind1.setOnCheckedChangeListener(new MyChangeListener(1));
+        switchBlind2.setOnCheckedChangeListener(new MyChangeListener(2));
+        switchBlind3.setOnCheckedChangeListener(new MyChangeListener(3));
+    }
+
+    private void setCallbacks() {
+        connection.setDisconnectedCallback(new ArduinoConnection.Callback() {
+            @Override
+            public void execute() {
+                Toast.makeText(ConfigurationActivity.this, "Disconnected from server!", Toast.LENGTH_LONG).show();
+                onBackPressed();
+            }
+        });
+
+        connection.setStateSetCallback(new ArduinoConnection.Callback() {
+            @Override
+            public void execute() {
+                if (sendingDialog != null)
+                    sendingDialog.dismiss();
+            }
+        });
+
+        connection.setStateNotSetCallback(new ArduinoConnection.Callback() {
+            @Override
+            public void execute() {
+                sendingDialog.setMessage("Problem with setting binds!");
+                connection.disconnect();
+            }
+        });
     }
 
     class MyChangeListener implements CompoundButton.OnCheckedChangeListener {
-        public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-            int bindID = 0;
 
-            if (compoundButton.getId() == R.id.switch_blind1) {
-                bindID = 1;
-            } else if (compoundButton.getId() == R.id.switch_blind2) {
-                bindID = 2;
-            } else bindID = 3;
-            ArduinoConnection.getInstance().setBindState(bindID, b);
+        private final int bindID;
+
+        MyChangeListener(int bindID) {
+            this.bindID = bindID;
+        }
+
+        @Override
+        public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+            sendingDialog = ProgressDialog.show(ConfigurationActivity.this, "Setting bind...", "Please wait ...", true);
+            connection.setBindState(bindID, b);
         }
     }
 }
