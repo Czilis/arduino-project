@@ -1,12 +1,17 @@
 package uz.embeddedsystems.arduino_client.client;
 
+
 import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
@@ -20,111 +25,53 @@ import butterknife.OnClick;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-public class MainActivity extends Activity {
-    public static final String IP_ADDRESS = "ip_address";
-    public static final String PORT = "port";
+import java.util.Set;
 
-    @Bind(R.id.btn_connect)
-    Button btnConnect;
-    @Bind(R.id.txt_ip_address)
-    EditText txtIpAddress;
-    @Bind(R.id.txt_port)
-    EditText txtPort;
 
-    private Intent nextActivity;
-    private boolean ipInserted = false;
-    private boolean portInserted = false;
-    private ArduinoConnection connection;
-    private ProgressDialog connectingDialog;
+public class MainActivity extends Activity implements ManageAddressesFragment.Listener {
+    ManageAddressesFragment fragmentManageAddresses;
+    ConnectFragment fragmetnConnect;
+    final FragmentManager fragmentManager = getFragmentManager();
 
-    @OnClick(R.id.btn_connect)
-    public void onButtonConnectClicked() {
-        nextActivity = new Intent(this, ConfigurationActivity.class);
-        final String ip_address = txtIpAddress.getText().toString();
-        final String port = txtPort.getText().toString();
-
-        if (NetworkUtils.isWifiConnected(this)) {
-            connectingDialog = ProgressDialog.show(this, "Connecting with server...", "Please wait ...", true);
-            connection.connect(ip_address, port);
-        } else {
-            Toast.makeText(this, "No connection!", Toast.LENGTH_SHORT).show();
-        }
+    @Override
+    public void onAddressAdded() {
+        showProperFragment();
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        setContentView(R.layout.activity_main);
+        fragmentManageAddresses = new ManageAddressesFragment();
+        fragmetnConnect = new ConnectFragment();
+        fragmentManageAddresses.setListener(this);
+        showProperFragment();
 
-        connection = ArduinoConnection.getInstance();
-        connection.setConnectedCallback(new ArduinoConnection.Callback() {
-            @Override
-            public void execute() {
-                connectingDialog.dismiss();
-                if (nextActivity != null)
-                    startActivity(nextActivity);
-            }
-        });
 
-        setListener();
     }
 
-    private void checkIfButtonCanChangeState() {
-        if (ipInserted && portInserted) {
-            btnConnect.setEnabled(true);
+    private void showProperFragment() {
+        if (isAnyPairStored()) {
+            setActiveFragmentTo(fragmetnConnect);
         } else {
-            btnConnect.setEnabled(false);
+            setActiveFragmentTo(fragmentManageAddresses);
         }
     }
 
-    private void setListener() {
-        txtIpAddress.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                if (editable.length() >= 7) {
-                    ipInserted = true;
-                    checkIfButtonCanChangeState();
-                } else {
-                    ipInserted = false;
-                    checkIfButtonCanChangeState();
-                }
-            }
-        });
-
-        txtPort.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                if (editable.length() == 4) {
-                    portInserted = true;
-                    checkIfButtonCanChangeState();
-                } else {
-                    portInserted = false;
-                    checkIfButtonCanChangeState();
-                }
-            }
-        });
+    private void setActiveFragmentTo(final Fragment fragment) {
+        final FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.layout_fragment_container, fragment);
+        fragmentTransaction.commit();
     }
+
+    private boolean isAnyPairStored() {
+        final Pair<Set, Set> savedPair = SharedPreferencesUtils.getSavedPair(this);
+        return !savedPair.first.isEmpty() && !savedPair.second.isEmpty();
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -142,10 +89,20 @@ public class MainActivity extends Activity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.check_wifi_connection) {
+            if (NetworkUtils.isWifiConnected(this)) {
+                Toast.makeText(this, "You have WiFi connection", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "You don't have WiFi connection", Toast.LENGTH_SHORT).show();
+            }
             return NetworkUtils.isWifiConnected(this);
+        }
+
+        if (id == R.id.add_another_address) {
+            setActiveFragmentTo(fragmentManageAddresses);
         }
 
         return super.onOptionsItemSelected(item);
     }
-
 }
+
+

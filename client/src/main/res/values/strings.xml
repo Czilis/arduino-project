@@ -1,6 +1,4 @@
 <resources>
     <string name="app_name">arduino-Client</string>
-
-    <string name="hello_world">Hello world!</string>
-    <string name="verify_connection">Sprawdź połączenie</string>
+    <string name="verify_connection">Verify wifi connection</string>
 </resources>

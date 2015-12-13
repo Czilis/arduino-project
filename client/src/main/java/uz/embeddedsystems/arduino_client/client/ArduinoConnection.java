@@ -187,7 +187,7 @@ public class ArduinoConnection {
     }
 
     private void logException(Exception e) {
-        Log.e("Arduino Socket Connection", "Exception occurred!", e);
+        Log.e("ArduinoConnection", "Exception occurred!", e);
     }
 
     public interface Callback {

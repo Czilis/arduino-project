@@ -11,9 +11,7 @@ import android.widget.Toast;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-/**
- * Created by Patryk on 26.11.2015.
- */
+
 public class ConfigurationActivity extends Activity {
 
     @Bind(R.id.switch_blind1)
