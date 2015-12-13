@@ -1,21 +1,34 @@
 package uz.embeddedsystems.arduino_client.client;
 
+
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+
+import java.io.IOException;
+import java.net.UnknownHostException;
 
 import java.util.Set;
 
-public class MainActivity extends Activity implements ManageAddressesFragment.Listener{
+
+public class MainActivity extends Activity implements ManageAddressesFragment.Listener {
     ManageAddressesFragment fragmentManageAddresses;
     ConnectFragment fragmetnConnect;
     final FragmentManager fragmentManager = getFragmentManager();
@@ -25,16 +38,19 @@ public class MainActivity extends Activity implements ManageAddressesFragment.Li
         showProperFragment();
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ButterKnife.bind(this);
         setContentView(R.layout.activity_main);
         fragmentManageAddresses = new ManageAddressesFragment();
         fragmetnConnect = new ConnectFragment();
         fragmentManageAddresses.setListener(this);
         showProperFragment();
-    }
 
+
+    }
 
     private void showProperFragment() {
         if (isAnyPairStored()) {
@@ -44,16 +60,18 @@ public class MainActivity extends Activity implements ManageAddressesFragment.Li
         }
     }
 
+
     private void setActiveFragmentTo(final Fragment fragment) {
         final FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.layout_fragment_container, fragment);
         fragmentTransaction.commit();
     }
 
-    private boolean isAnyPairStored(){
+    private boolean isAnyPairStored() {
         final Pair<Set, Set> savedPair = SharedPreferencesUtils.getSavedPair(this);
         return !savedPair.first.isEmpty() && !savedPair.second.isEmpty();
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -71,9 +89,14 @@ public class MainActivity extends Activity implements ManageAddressesFragment.Li
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.check_wifi_connection) {
-
-//            return isWifiConnected();
+            if (NetworkUtils.isWifiConnected(this)) {
+                Toast.makeText(this, "You have WiFi connection", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "You don't have WiFi connection", Toast.LENGTH_SHORT).show();
+            }
+            return NetworkUtils.isWifiConnected(this);
         }
+
         if (id == R.id.add_another_address) {
             setActiveFragmentTo(fragmentManageAddresses);
         }
@@ -81,3 +104,5 @@ public class MainActivity extends Activity implements ManageAddressesFragment.Li
         return super.onOptionsItemSelected(item);
     }
 }
+
+
