@@ -17,7 +17,7 @@ public class ArduinoConnection {
     private Callback stateSetCallback;
     private Callback stateNotSetCallback;
 
-    private Socket connection = null;
+//    private Socket connection = null;
     private String bindsList = "";
 
     private ArduinoConnection() {
@@ -27,25 +27,25 @@ public class ArduinoConnection {
         return instance;
     }
 
-    public final void connect(final String ipAddress, final String port) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-
-                    if (connection == null) {
-                        connection = new Socket(ipAddress, Integer.parseInt(port));
-
-                        bindsList = readBindsConfiguration();
-                        fireCallback(connectedCallback);
-                    }
-
-                } catch (Exception e) {
-                    logException(e);
-                }
-            }
-        }).start();
-    }
+//    public final void connect(final String ipAddress, final String port) {
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//
+//                    if (connection == null) {
+//                        connection = new Socket(ipAddress, Integer.parseInt(port));
+//
+//                        bindsList = readBindsConfiguration();
+//                        fireCallback(connectedCallback);
+//                    }
+//
+//                } catch (Exception e) {
+//                    logException(e);
+//                }
+//            }
+//        }).start();
+////    }
 
     public int getBindsCount() {
         return bindsList.length();
@@ -68,7 +68,7 @@ public class ArduinoConnection {
                 StringBuilder builder = new StringBuilder(bindsList);
                 builder.setCharAt(bind - 1, Character.toUpperCase(state));
                 builder.toString();
-                sendBindsConfiguration(builder.toString());
+//                sendBindsConfiguration(builder.toString());
                 bindsList = builder.toString();
             }
     }
@@ -96,33 +96,33 @@ public class ArduinoConnection {
         this.stateNotSetCallback = stateNotSetCallback;
     }
 
-    public boolean isConneced() {
-        if (connection != null)
-            if (connection.isConnected())
-                if (!connection.isClosed())
-                    return true;
+//    public boolean isConneced() {
+//        if (connection != null)
+//            if (connection.isConnected())
+//                if (!connection.isClosed())
+//                    return true;
+//
+//        disconnect();
+//        return false;
+//    }
 
-        disconnect();
-        return false;
-    }
-
-    public boolean disconnect() {
-        if (connection != null) {
-            try {
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
-                out.write("END" + '\n');
-                out.flush();
-
-                connection.close();
-                connection = null;
-                fireCallback(disconnectedCallback);
-                return true;
-            } catch (IOException e) {
-                logException(e);
-            }
-        }
-        return false;
-    }
+//    public boolean disconnect() {
+//        if (connection != null) {
+//            try {
+//                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
+//                out.write("END" + '\n');
+//                out.flush();
+//
+//                connection.close();
+//                connection = null;
+//                fireCallback(disconnectedCallback);
+//                return true;
+//            } catch (IOException e) {
+//                logException(e);
+//            }
+//        }
+//        return false;
+//    }
 
     private boolean isStateValid(char state) {
         char st = Character.toUpperCase(state);
@@ -131,54 +131,54 @@ public class ArduinoConnection {
         return false;
     }
 
-    private String readBindsConfiguration() throws IOException {
-        final String data = readString();
+//    private String readBindsConfiguration() throws IOException {
+//        final String data = readString();
+//
+//        final char[] binds = data.toCharArray();
+//        String bindsList = "";
+//        for (Character bind : binds) {
+//            bindsList = bindsList + bind;
+//        }
+//
+//        return bindsList;
+//    }
 
-        final char[] binds = data.toCharArray();
-        String bindsList = "";
-        for (Character bind : binds) {
-            bindsList = bindsList + bind;
-        }
+//    private void sendBindsConfiguration(final String binds) {
+//        if (isConneced()) {
+//            new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    try {
+//                        Thread.sleep(1000);
+//                        writeString(binds + '\n');
+//
+//                        String confirmation = readBindsConfiguration();
+//                        if (confirmation.contains("K")) {
+//                            fireCallback(stateSetCallback);
+//                        } else {
+//                            fireCallback(stateNotSetCallback);
+//                        }
+//                    } catch (IOException e) {
+//                        logException(e);
+//                        fireCallback(stateNotSetCallback);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }).start();
+//        }
+//    }
 
-        return bindsList;
-    }
+//    private String readString() throws IOException {
+//        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+//        return in.readLine();
+//    }
 
-    private void sendBindsConfiguration(final String binds) {
-        if (isConneced()) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Thread.sleep(1000);
-                        writeString(binds + '\n');
-
-                        String confirmation = readBindsConfiguration();
-                        if (confirmation.contains("K")) {
-                            fireCallback(stateSetCallback);
-                        } else {
-                            fireCallback(stateNotSetCallback);
-                        }
-                    } catch (IOException e) {
-                        logException(e);
-                        fireCallback(stateNotSetCallback);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-        }
-    }
-
-    private String readString() throws IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        return in.readLine();
-    }
-
-    private void writeString(final String data) throws IOException {
-        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
-        out.write(data);
-        out.flush();
-    }
+//    private void writeString(final String data) throws IOException {
+//        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
+//        out.write(data);
+//        out.flush();
+//    }
 
     private void fireCallback(Callback callback) {
         if (callback != null) {

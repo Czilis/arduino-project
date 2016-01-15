@@ -2,12 +2,8 @@ package uz.embeddedsystems.arduino_client.client;
 
 import android.app.Fragment;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +32,7 @@ public class ConnectFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-          setRetainInstance(true);
+        setRetainInstance(true);
         connection = ArduinoConnection.getInstance();
         connection.setConnectedCallback(new ArduinoConnection.Callback() {
             @Override
@@ -78,7 +74,7 @@ public class ConnectFragment extends Fragment {
 
         if (NetworkUtils.isWifiConnected(getActivity())) {
             connectingDialog = ProgressDialog.show(getActivity(), "Connecting with server...", "Please wait ...", true);
-            connection.connect(ip_address, port);
+//            connection.connect(ip_address, port);
         } else {
             Toast.makeText(getActivity(), "No connection!", Toast.LENGTH_SHORT).show();
         }
@@ -89,12 +85,12 @@ public class ConnectFragment extends Fragment {
         final ArrayAdapter<String> ipSpinnerAdapter = new ArrayAdapter<String>(getActivity(), R.layout.single_item_spinner);
         ipSpinnerAdapter.addAll(ipCollection);
         spinnerIp.setAdapter(ipSpinnerAdapter);
-        spinnerIp.setSelection(ipCollection.size()- ipCollection.size()-1);
+        spinnerIp.setSelection(ipCollection.size() - ipCollection.size() - 1);
 
         final ArrayAdapter<String> portSpinnerAdapter = new ArrayAdapter<String>(getActivity(), R.layout.single_item_spinner);
         portSpinnerAdapter.addAll(portCollection);
         spinnerPort.setAdapter(portSpinnerAdapter);
-        spinnerPort.setSelection(portCollection.size() - portCollection.size()-1);
+        spinnerPort.setSelection(portCollection.size() - portCollection.size() - 1);
     }
 
 }
