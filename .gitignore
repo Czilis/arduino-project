@@ -1,4 +1,7 @@
 ### Android template
+# Generated files by Android Studio
+*.iml
+
 # Built application files
 *.apk
 *.ap_

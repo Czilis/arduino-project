@@ -2,22 +2,31 @@ package uz.embeddedsystems.arduino_client.client;
 
 import android.util.Log;
 
-import java.io.*;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * Created by michal on 29.11.15.
  */
 public class ArduinoConnection {
-
+    private static final String PROTOCOL = "http://";
     private static ArduinoConnection instance = new ArduinoConnection();
     private Callback connectedCallback;
     private Callback disconnectedCallback;
     private Callback stateSetCallback;
     private Callback stateNotSetCallback;
-
-//    private Socket connection = null;
+    private Callback exceptionCallback;
+    private String serverResponse;
     private String bindsList = "";
 
     private ArduinoConnection() {
@@ -27,26 +36,53 @@ public class ArduinoConnection {
         return instance;
     }
 
-//    public final void connect(final String ipAddress, final String port) {
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//
-//                    if (connection == null) {
-//                        connection = new Socket(ipAddress, Integer.parseInt(port));
-//
-//                        bindsList = readBindsConfiguration();
-//                        fireCallback(connectedCallback);
-//                    }
-//
-//                } catch (Exception e) {
-//                    logException(e);
-//                }
-//            }
-//        }).start();
-////    }
+    public final void connect(final String ipAddress, final String port) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final String address = PROTOCOL + ipAddress + ":" + port + "/wtf";
+                    fetchServer(address);
+                } catch (Exception e) {
+                    logException(e);
+                }
+            }
+        }).start();
+    }
 
+    private void fetchServer(final String website) {
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final URI uri = new URI(website);
+                    final HttpClient httpClient = new DefaultHttpClient();
+                    final HttpGet getRequest = new HttpGet();
+                    getRequest.setURI(uri);
+                    final HttpResponse httpResponse = httpClient.execute(getRequest);
+                    final InputStream content = httpResponse.getEntity().getContent();
+                    final BufferedReader in = new BufferedReader(new InputStreamReader(content));
+                    serverResponse = in.readLine();
+                    Log.e("Odp od serwera: ", serverResponse);
+                    fireCallback(connectedCallback);
+                    fireCallback(exceptionCallback, serverResponse);
+                    content.close();
+                } catch (ClientProtocolException e) {
+                    // HTTP error
+                    fireCallback(exceptionCallback, "HTTP error occurred !");
+                   logException(e);
+                } catch (IOException e) {
+                    // IO error
+                    fireCallback(exceptionCallback, "IO exception occurred !");
+                    logException(e);
+                } catch (URISyntaxException e) {
+                    fireCallback(exceptionCallback, "URI error occurred !");
+                    logException(e);
+                }
+            }
+        }).start();
+    }
     public int getBindsCount() {
         return bindsList.length();
     }
@@ -94,6 +130,9 @@ public class ArduinoConnection {
 
     public void setStateNotSetCallback(Callback stateNotSetCallback) {
         this.stateNotSetCallback = stateNotSetCallback;
+    }
+    public void setExceptionCallback(Callback exceptionCallback) {
+        this.exceptionCallback = exceptionCallback;
     }
 
 //    public boolean isConneced() {
@@ -179,18 +218,25 @@ public class ArduinoConnection {
 //        out.write(data);
 //        out.flush();
 //    }
-
-    private void fireCallback(Callback callback) {
+    private void fireCallback(final Callback callback) {
+        fireCallback(callback, null);
+    }
+    private void fireCallback(Callback callback, final String message) {
         if (callback != null) {
-            callback.execute();
+            if (null == message || message.isEmpty()) {
+                callback.execute();
+            } else {
+                callback.execute(message);
+            }
         }
     }
 
     private void logException(Exception e) {
-        Log.e("ArduinoConnection", "Exception occurred!", e);
+        Log.e("ArduinoConnection", e.getMessage(), e);
     }
 
     public interface Callback {
         void execute();
+        void execute(final String message);
     }
 }

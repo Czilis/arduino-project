@@ -37,9 +37,14 @@ public class ConnectFragment extends Fragment {
         connection.setConnectedCallback(new ArduinoConnection.Callback() {
             @Override
             public void execute() {
-                connectingDialog.dismiss();
-                if (nextActivity != null)
-                    startActivity(nextActivity);
+//                connectingDialog.dismiss();
+//                if (nextActivity != null)
+//                    startActivity(nextActivity);
+            }
+
+            @Override
+            public void execute(final String message) {
+//
             }
         });
     }
@@ -74,7 +79,7 @@ public class ConnectFragment extends Fragment {
 
         if (NetworkUtils.isWifiConnected(getActivity())) {
             connectingDialog = ProgressDialog.show(getActivity(), "Connecting with server...", "Please wait ...", true);
-//            connection.connect(ip_address, port);
+            connection.connect(ip_address, port);
         } else {
             Toast.makeText(getActivity(), "No connection!", Toast.LENGTH_SHORT).show();
         }
