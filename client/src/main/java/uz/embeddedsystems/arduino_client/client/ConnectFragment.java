@@ -2,7 +2,9 @@ package uz.embeddedsystems.arduino_client.client;
 
 import android.app.Fragment;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,6 +23,7 @@ import butterknife.OnClick;
 public class ConnectFragment extends Fragment {
     private static final String TAG = "ConnectFragment";
     public static final String CONFIGURATION = "configuration";
+    public static final String SHARED_KEY = "sh";
     @Bind(R.id.spinner_ip)
     Spinner spinnerIp;
     @Bind(R.id.spinner_port)
@@ -68,8 +71,9 @@ public class ConnectFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        final Set<String> ipSet = SharedPreferencesUtils.getSavedPair(getActivity()).first;
-        final Set<String> portSet = SharedPreferencesUtils.getSavedPair(getActivity()).second;
+        final SharedPreferences preferences = getActivity().getSharedPreferences(SHARED_KEY, Context.MODE_PRIVATE);
+        final Set<String> ipSet = SharedPreferencesUtils.getSavedPair(preferences).first;
+        final Set<String> portSet = SharedPreferencesUtils.getSavedPair(preferences).second;
         setupSpinners(ipSet, portSet);
     }
 

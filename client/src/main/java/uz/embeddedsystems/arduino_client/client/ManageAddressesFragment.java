@@ -1,6 +1,8 @@
 package uz.embeddedsystems.arduino_client.client;
 
 import android.app.Fragment;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -11,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import butterknife.Bind;
@@ -59,13 +62,15 @@ public class ManageAddressesFragment extends Fragment {
 
     @OnClick(R.id.btn_add_address)
     public void onButtonAddAddressClicked() {
-        final Set<String> ipSet = SharedPreferencesUtils.getSavedPair(getActivity()).first;
-        final Set<String> portSet = SharedPreferencesUtils.getSavedPair(getActivity()).second;
+        final SharedPreferences preferences = getActivity().getSharedPreferences(ConnectFragment.SHARED_KEY, Context.MODE_PRIVATE);
+        final Pair<Set, Set> pair = SharedPreferencesUtils.getSavedPair(preferences);
+        final Set<String> ipSet = new HashSet<String>(pair.first);
+        final Set<String> portSet = new HashSet<String>(pair.second);
 
         ipSet.add(txtIpAddress.getText().toString());
         portSet.add(txtPort.getText().toString());
 
-        SharedPreferencesUtils.savePair(getActivity(), new Pair(ipSet, portSet));
+        SharedPreferencesUtils.savePair(preferences, new Pair(ipSet, portSet));
         listener.onAddressAdded();
     }
 

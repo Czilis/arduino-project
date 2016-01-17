@@ -56,7 +56,7 @@ public class MainActivity extends Activity implements ManageAddressesFragment.Li
     }
 
     private boolean isAnyPairStored() {
-        final Pair<Set, Set> savedPair = SharedPreferencesUtils.getSavedPair(this);
+        final Pair<Set, Set> savedPair = SharedPreferencesUtils.getSavedPair(this.getSharedPreferences(ConnectFragment.SHARED_KEY, MODE_PRIVATE));
         return !savedPair.first.isEmpty() && !savedPair.second.isEmpty();
     }
 
