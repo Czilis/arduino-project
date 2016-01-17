@@ -29,20 +29,19 @@ public class ConfigurationActivity extends Activity {
     EditText txtSetTemp;
     @Bind(R.id.btn_send)
     Button btnSend;
-
-    private final String generalAddress = "http://192.168.1.2:8080/dupa";
-
+    private String blindsBeforeChange;
+    private String tempBeforeChange;
+    private String tempAfterChange;
     private ProgressDialog sendingDialog;
     private ArduinoConnection connection;
-    String serverResponse;
 
     @OnClick(R.id.btn_send)
     public void onButtonSendClicked() {
-        connection.setBindState(1, true);
-        connection.setBindState(2, false);
-        connection.setBindState(3, true);
-//        sendingDialog = ProgressDialog.show(ConfigurationActivity.this, "Fetching configuration", "Please wait ...", true);
-//        connection.connect();
+        sendingDialog = ProgressDialog.show(ConfigurationActivity.this, "Setting configuration", "Please wait ...", true);
+        tempBeforeChange = txtActualTemp.getText().toString();
+        tempAfterChange = txtSetTemp.getText().toString();
+        setTemp(tempAfterChange);
+        connection.setConfiguration("OZO", tempAfterChange);
     }
 
 
@@ -52,18 +51,13 @@ public class ConfigurationActivity extends Activity {
         setContentView(R.layout.activity_configuration);
         ButterKnife.bind(this);
         connection = ArduinoConnection.getInstance();
-        setCallback();
-        String response = getIntent().getExtras().getString(ConnectFragment.CONFIGURATION);
+        setCallbacks();
+        final String response = getIntent().getExtras().getString(ConnectFragment.CONFIGURATION);
         Log.e("CONFACT", "onCreate: " + response);
-        setSwitches(response.substring(0, 3));
-        txtActualTemp.setText(getString(R.string.actual_temp) + response.substring(response.indexOf(",")+1, response.length() ));
-        System.out.println();
-
-//        fetchServer(generalAddress);
-//        sendingDialog.dismiss();
-//        Log.e("States: ", connection.getBindsStates());
-
-//        setSwitches(connection.getBindsStates());
+        final String switchesConf = response.substring(0, 3);
+        blindsBeforeChange = switchesConf;
+        setSwitches(switchesConf);
+        setTemp(response.substring(response.indexOf(",") + 1, response.length()));
     }
 
 
@@ -77,7 +71,7 @@ public class ConfigurationActivity extends Activity {
 
     }
 
-    private void setSwitches(String bindsStates) {
+    private void setSwitches(final String bindsStates) {
         char[] states = bindsStates.toCharArray();
         setSwitch(switchBlind1, states[0]);
         setSwitch(switchBlind2, states[1]);
@@ -91,31 +85,49 @@ public class ConfigurationActivity extends Activity {
             switchBlind.setChecked(false);
     }
 
-    private void setCallback() {
-        connection.setExceptionCallback(new ArduinoConnection.Callback() {
+    private void setCallbacks() {
+        connection.setServerBusyCallback(new ArduinoConnection.Callback() {
             @Override
-            public void execute() {
-//                not used
+            public void execute(final String message) {
+                Toast.makeText(ConfigurationActivity.this, "Server is busy! Try again later.", Toast.LENGTH_SHORT).show();
+                setSwitches(blindsBeforeChange);
+                setTemp(tempBeforeChange);
+                sendingDialog.dismiss();
             }
+        });
 
+        connection.setExceptionCallback(new ArduinoConnection.Callback() {
             @Override
             public void execute(final String message) {
                 showMessage(message);
             }
         });
 
-        connection.setConnectedCallback(new ArduinoConnection.Callback() {
-            @Override
-            public void execute() {
-                Toast.makeText(ConfigurationActivity.this, "Connected !", Toast.LENGTH_SHORT).show();
-                sendingDialog.dismiss();
-            }
-
+        connection.setSuccessfulSetCallback(new ArduinoConnection.Callback() {
             @Override
             public void execute(final String message) {
-//not used
+                if (message.equals("OK")) {
+                    blindsBeforeChange = getBindsStates();
+                    Toast.makeText(ConfigurationActivity.this, "Settings successfully set !", Toast.LENGTH_SHORT).show();
+                }
+                sendingDialog.dismiss();
             }
         });
     }
 
+    private String getBindsStates() {
+        StringBuilder builder = new StringBuilder(3);
+        builder.append(getState(switchBlind1))
+                .append(getState(switchBlind2))
+                .append(getState(switchBlind3));
+        return builder.toString();
+    }
+
+    private String getState(final Switch switchBlind) {
+        return (switchBlind.isChecked() ? "O" : "Z");
+    }
+
+    private void setTemp(final String temp) {
+        txtActualTemp.setText(temp);
+    }
 }

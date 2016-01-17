@@ -41,10 +41,7 @@ public class ConnectFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
         connection = ArduinoConnection.getInstance();
-        connection.setConnectedCallback(new ArduinoConnection.Callback() {
-            @Override
-            public void execute() {
-            }
+        connection.setSuccessfulSetCallback(new ArduinoConnection.Callback() {
             @Override
             public void execute(final String message) {
                 connectingDialog.dismiss();
@@ -57,12 +54,6 @@ public class ConnectFragment extends Fragment {
             }
         });
         connection.setExceptionCallback(new ArduinoConnection.Callback() {
-            @Override
-            public void execute() {
-                Toast.makeText(getActivity(), "An exception has occured", Toast.LENGTH_SHORT).show();
-
-            }
-
             @Override
             public void execute(final String message) {
                 Toast.makeText(getActivity(), "Exception! Message "+ message, Toast.LENGTH_SHORT).show();
@@ -100,8 +91,8 @@ public class ConnectFragment extends Fragment {
         final String port = (String) spinnerPort.getSelectedItem();
 
         if (NetworkUtils.isWifiConnected(getActivity())) {
-            connectingDialog = ProgressDialog.show(getActivity(), "Connecting with server...", "Please wait ...", true);
-            connection.fetchServerConfiguration(ip_address, port);
+            connectingDialog = ProgressDialog.show(getActivity(), "Fetching Configuration", "Please wait ...", true);
+            connection.fetchConfiguration(ip_address, port);
         } else {
             Toast.makeText(getActivity(), "No connection!", Toast.LENGTH_SHORT).show();
         }

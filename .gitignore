@@ -1,4 +1,6 @@
 ### Android template
+# Android studio folder
+.idea/
 # Generated files by Android Studio
 *.iml
 
