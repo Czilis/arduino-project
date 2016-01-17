@@ -115,9 +115,9 @@ public void setSuccessfulFetchCallback(final Callback fetchCallback) {
     }
 
     public interface ConnectionInterface {
-        @GET("servlet")
+        @GET("/")
         Call<ResponseBody> setConfiguration(@Query("blinds") String conf, @Query("temperature") String temp);
-        @GET("servlet")
+        @GET("/")
         Call<ResponseBody> fetchConfiguration(@Query("fetchconf") String fetch);
     }
 }
