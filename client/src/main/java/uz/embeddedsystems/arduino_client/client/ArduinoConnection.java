@@ -2,6 +2,9 @@ package uz.embeddedsystems.arduino_client.client;
 
 import android.util.Log;
 
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.ResponseBody;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -14,10 +17,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.TimeUnit;
 
-/**
- * Created by michal on 29.11.15.
- */
+import retrofit.Call;
+import retrofit.Response;
+import retrofit.Retrofit;
+import retrofit.http.GET;
+import retrofit.http.Query;
+
+
 public class ArduinoConnection {
     private static final String PROTOCOL = "http://";
     private static ArduinoConnection instance = new ArduinoConnection();
@@ -28,26 +36,40 @@ public class ArduinoConnection {
     private Callback exceptionCallback;
     private String serverResponse;
     private String bindsList = "";
+    final OkHttpClient client = new OkHttpClient();
+    Retrofit retrofit;
+    ArduinoConnection.ConnectionInterface service;
 
     private ArduinoConnection() {
+        client.setConnectTimeout(5, TimeUnit.SECONDS);
+        client.setReadTimeout(40, TimeUnit.SECONDS);
     }
 
     public static ArduinoConnection getInstance() {
         return instance;
     }
 
-    public final void connect(final String ipAddress, final String port) {
-        new Thread(new Runnable() {
+    public void fetchServerConfiguration(final String ipAddress, final String port) {
+        retrofit = new Retrofit.Builder().baseUrl(PROTOCOL + ipAddress + ":" + port + "/").client(client).build();
+        service = retrofit.create(ArduinoConnection.ConnectionInterface.class);
+        final Call<ResponseBody> call = service.fetchConfiguration("true");
+        call.enqueue(new retrofit.Callback<ResponseBody>() {
             @Override
-            public void run() {
+            public void onResponse(final Response<ResponseBody> response, final Retrofit retrofit) {
                 try {
-                    final String address = PROTOCOL + ipAddress + ":" + port + "/wtf";
-                    fetchServer(address);
-                } catch (Exception e) {
-                    logException(e);
+                    serverResponse = new String(response.body().bytes());
+                    fireCallback(connectedCallback, serverResponse);
+
+                } catch (IOException e) {
+                    fireCallback(exceptionCallback, "IOException occurred !");
                 }
             }
-        }).start();
+
+            @Override
+            public void onFailure(final Throwable t) {
+                fireCallback(exceptionCallback, t.getMessage());
+            }
+        });
     }
 
     private void fetchServer(final String website) {
@@ -64,6 +86,8 @@ public class ArduinoConnection {
                     final InputStream content = httpResponse.getEntity().getContent();
                     final BufferedReader in = new BufferedReader(new InputStreamReader(content));
                     serverResponse = in.readLine();
+                    final Retrofit report = new Retrofit.Builder().baseUrl(website).build();
+
                     Log.e("Odp od serwera: ", serverResponse);
                     fireCallback(connectedCallback);
                     fireCallback(exceptionCallback, serverResponse);
@@ -71,7 +95,7 @@ public class ArduinoConnection {
                 } catch (ClientProtocolException e) {
                     // HTTP error
                     fireCallback(exceptionCallback, "HTTP error occurred !");
-                   logException(e);
+                    logException(e);
                 } catch (IOException e) {
                     // IO error
                     fireCallback(exceptionCallback, "IO exception occurred !");
@@ -83,6 +107,7 @@ public class ArduinoConnection {
             }
         }).start();
     }
+
     public int getBindsCount() {
         return bindsList.length();
     }
@@ -131,6 +156,7 @@ public class ArduinoConnection {
     public void setStateNotSetCallback(Callback stateNotSetCallback) {
         this.stateNotSetCallback = stateNotSetCallback;
     }
+
     public void setExceptionCallback(Callback exceptionCallback) {
         this.exceptionCallback = exceptionCallback;
     }
@@ -213,7 +239,7 @@ public class ArduinoConnection {
 //        return in.readLine();
 //    }
 
-//    private void writeString(final String data) throws IOException {
+    //    private void writeString(final String data) throws IOException {
 //        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(connection.getOutputStream()));
 //        out.write(data);
 //        out.flush();
@@ -221,6 +247,7 @@ public class ArduinoConnection {
     private void fireCallback(final Callback callback) {
         fireCallback(callback, null);
     }
+
     private void fireCallback(Callback callback, final String message) {
         if (callback != null) {
             if (null == message || message.isEmpty()) {
@@ -237,6 +264,14 @@ public class ArduinoConnection {
 
     public interface Callback {
         void execute();
+
         void execute(final String message);
+    }
+
+    public interface ConnectionInterface {
+        @GET("servlet")
+        Call<ResponseBody> setBlinds(@Query("blinds") String conf);
+        @GET("servlet")
+        Call<ResponseBody> fetchConfiguration(@Query("fetchconf") String fetch);
     }
 }

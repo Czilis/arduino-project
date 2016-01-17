@@ -12,6 +12,11 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
+
+import java.io.IOException;
 import java.util.Set;
 
 import butterknife.Bind;
@@ -19,6 +24,8 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class ConnectFragment extends Fragment {
+    private static final String TAG = "ConnectFragment";
+    public static final String CONFIGURATION = "configuration";
     @Bind(R.id.btn_connect)
     Button btnConnect;
     @Bind(R.id.spinner_ip)
@@ -37,14 +44,29 @@ public class ConnectFragment extends Fragment {
         connection.setConnectedCallback(new ArduinoConnection.Callback() {
             @Override
             public void execute() {
-//                connectingDialog.dismiss();
-//                if (nextActivity != null)
-//                    startActivity(nextActivity);
+            }
+            @Override
+            public void execute(final String message) {
+                connectingDialog.dismiss();
+                if (message.contains("BUSY")) {
+                    Toast.makeText(getActivity(), "The server is currently bussy, try again later", Toast.LENGTH_SHORT).show();
+                }
+                nextActivity.putExtra(CONFIGURATION, message);
+                if (nextActivity != null)
+                    startActivity(nextActivity);
+            }
+        });
+        connection.setExceptionCallback(new ArduinoConnection.Callback() {
+            @Override
+            public void execute() {
+                Toast.makeText(getActivity(), "An exception has occured", Toast.LENGTH_SHORT).show();
+
             }
 
             @Override
             public void execute(final String message) {
-//
+                Toast.makeText(getActivity(), "Exception! Message "+ message, Toast.LENGTH_SHORT).show();
+
             }
         });
     }
@@ -79,7 +101,7 @@ public class ConnectFragment extends Fragment {
 
         if (NetworkUtils.isWifiConnected(getActivity())) {
             connectingDialog = ProgressDialog.show(getActivity(), "Connecting with server...", "Please wait ...", true);
-            connection.connect(ip_address, port);
+            connection.fetchServerConfiguration(ip_address, port);
         } else {
             Toast.makeText(getActivity(), "No connection!", Toast.LENGTH_SHORT).show();
         }
@@ -98,4 +120,18 @@ public class ConnectFragment extends Fragment {
         spinnerPort.setSelection(portCollection.size() - portCollection.size() - 1);
     }
 
+    public class GetExample {
+
+        OkHttpClient client = new OkHttpClient();
+
+        String run(String url) throws IOException {
+            Request request = new Request.Builder()
+                    .url(url)
+                    .build();
+
+
+            Response response = client.newCall(request).execute();
+            return response.body().string();
+        }
+    }
 }

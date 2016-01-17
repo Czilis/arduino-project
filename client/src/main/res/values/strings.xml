@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">arduino-Client</string>
     <string name="verify_connection">Verify wifi connection</string>
+    <string name="actual_temp">Actual temp:</string>
 </resources>

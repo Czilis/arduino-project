@@ -107,7 +107,7 @@ public class ManageAddressesFragment extends Fragment {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                if (editable.length() == 4) {
+                if (editable.length() >= 2) {
                     portInserted = true;
                     checkIfButtonCanChangeState();
                 } else {

@@ -3,8 +3,11 @@ package uz.embeddedsystems.arduino_client.client;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import butterknife.Bind;
@@ -20,6 +23,10 @@ public class ConfigurationActivity extends Activity {
     Switch switchBlind2;
     @Bind(R.id.switch_blind3)
     Switch switchBlind3;
+    @Bind(R.id.txt_actual_temp)
+    TextView txtActualTemp;
+    @Bind(R.id.txt_set_temp)
+    EditText txtSetTemp;
     @Bind(R.id.btn_send)
     Button btnSend;
 
@@ -34,10 +41,10 @@ public class ConfigurationActivity extends Activity {
         connection.setBindState(1, true);
         connection.setBindState(2, false);
         connection.setBindState(3, true);
-//        Log.e("onButtonSendClicked:", connection.getBindsStates());
 //        sendingDialog = ProgressDialog.show(ConfigurationActivity.this, "Fetching configuration", "Please wait ...", true);
 //        connection.connect();
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +53,11 @@ public class ConfigurationActivity extends Activity {
         ButterKnife.bind(this);
         connection = ArduinoConnection.getInstance();
         setCallback();
+        String response = getIntent().getExtras().getString(ConnectFragment.CONFIGURATION);
+        Log.e("CONFACT", "onCreate: " + response);
+        setSwitches(response.substring(0, 3));
+        txtActualTemp.setText(getString(R.string.actual_temp) + response.substring(response.indexOf(",")+1, response.length() ));
+        System.out.println();
 
 //        fetchServer(generalAddress);
 //        sendingDialog.dismiss();
