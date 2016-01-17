@@ -25,18 +25,15 @@
 
 <LinearLayout
     android:layout_marginTop="20dp"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    style="@style/wrap_both"
     android:orientation="horizontal">
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        style="@style/wrap_both"
         android:text="@string/actual_temp"/>
     <TextView
         android:id="@+id/txt_actual_temp"
         android:layout_marginLeft="10dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        style="@style/wrap_both"
         tools:text="12"/>
 </LinearLayout>
 
@@ -45,13 +42,12 @@
         android:id="@+id/txt_set_temp"
         android:minWidth="100dp"
         android:hint="Set temperature"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        style="@style/wrap_both"
+        android:inputType="number"/>
     <Button
         android:id="@+id/btn_send"
         android:layout_marginTop="50dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="SEND"
+        style="@style/wrap_both"
+        android:text="SET CONFIGURATION"
         android:layout_gravity="center"/>
 </LinearLayout>

@@ -4,19 +4,14 @@ import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
-
-import java.io.IOException;
 import java.util.Set;
 
 import butterknife.Bind;
@@ -26,8 +21,6 @@ import butterknife.OnClick;
 public class ConnectFragment extends Fragment {
     private static final String TAG = "ConnectFragment";
     public static final String CONFIGURATION = "configuration";
-    @Bind(R.id.btn_connect)
-    Button btnConnect;
     @Bind(R.id.spinner_ip)
     Spinner spinnerIp;
     @Bind(R.id.spinner_port)
@@ -41,23 +34,26 @@ public class ConnectFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
         connection = ArduinoConnection.getInstance();
-        connection.setSuccessfulSetCallback(new ArduinoConnection.Callback() {
+        setCallbacks();
+    }
+
+    private void setCallbacks() {
+        connection.setSuccessfulFetchCallback(new ArduinoConnection.Callback() {
             @Override
             public void execute(final String message) {
                 connectingDialog.dismiss();
-                if (message.contains("BUSY")) {
-                    Toast.makeText(getActivity(), "The server is currently bussy, try again later", Toast.LENGTH_SHORT).show();
-                }
                 nextActivity.putExtra(CONFIGURATION, message);
                 if (nextActivity != null)
                     startActivity(nextActivity);
             }
         });
+
         connection.setExceptionCallback(new ArduinoConnection.Callback() {
             @Override
             public void execute(final String message) {
+                connectingDialog.dismiss();
+                Log.e(TAG, "Exception: "+ message );
                 Toast.makeText(getActivity(), "Exception! Message "+ message, Toast.LENGTH_SHORT).show();
-
             }
         });
     }
@@ -111,18 +107,4 @@ public class ConnectFragment extends Fragment {
         spinnerPort.setSelection(portCollection.size() - portCollection.size() - 1);
     }
 
-    public class GetExample {
-
-        OkHttpClient client = new OkHttpClient();
-
-        String run(String url) throws IOException {
-            Request request = new Request.Builder()
-                    .url(url)
-                    .build();
-
-
-            Response response = client.newCall(request).execute();
-            return response.body().string();
-        }
-    }
 }

@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -17,6 +16,7 @@ import butterknife.OnClick;
 
 public class ConfigurationActivity extends Activity {
 
+    private static final String TAG = "ConfigurationActivity";
     @Bind(R.id.switch_blind1)
     Switch switchBlind1;
     @Bind(R.id.switch_blind2)
@@ -27,8 +27,6 @@ public class ConfigurationActivity extends Activity {
     TextView txtActualTemp;
     @Bind(R.id.txt_set_temp)
     EditText txtSetTemp;
-    @Bind(R.id.btn_send)
-    Button btnSend;
     private String blindsBeforeChange;
     private String tempBeforeChange;
     private String tempAfterChange;
@@ -41,7 +39,7 @@ public class ConfigurationActivity extends Activity {
         tempBeforeChange = txtActualTemp.getText().toString();
         tempAfterChange = txtSetTemp.getText().toString();
         setTemp(tempAfterChange);
-        connection.setConfiguration("OZO", tempAfterChange);
+        connection.setConfiguration(getBindsStates(), tempAfterChange);
     }
 
 
@@ -53,7 +51,7 @@ public class ConfigurationActivity extends Activity {
         connection = ArduinoConnection.getInstance();
         setCallbacks();
         final String response = getIntent().getExtras().getString(ConnectFragment.CONFIGURATION);
-        Log.e("CONFACT", "onCreate: " + response);
+        Log.e(TAG, "onCreate: " + response);
         final String switchesConf = response.substring(0, 3);
         blindsBeforeChange = switchesConf;
         setSwitches(switchesConf);
@@ -99,6 +97,8 @@ public class ConfigurationActivity extends Activity {
         connection.setExceptionCallback(new ArduinoConnection.Callback() {
             @Override
             public void execute(final String message) {
+                sendingDialog.dismiss();
+                Log.e(TAG, "Houston ! " + message);
                 showMessage(message);
             }
         });
@@ -106,11 +106,9 @@ public class ConfigurationActivity extends Activity {
         connection.setSuccessfulSetCallback(new ArduinoConnection.Callback() {
             @Override
             public void execute(final String message) {
-                if (message.equals("OK")) {
-                    blindsBeforeChange = getBindsStates();
-                    Toast.makeText(ConfigurationActivity.this, "Settings successfully set !", Toast.LENGTH_SHORT).show();
-                }
+                blindsBeforeChange = getBindsStates();
                 sendingDialog.dismiss();
+                Toast.makeText(ConfigurationActivity.this, "Settings successfully set !", Toast.LENGTH_SHORT).show();
             }
         });
     }

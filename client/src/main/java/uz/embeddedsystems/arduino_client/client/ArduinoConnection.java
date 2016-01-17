@@ -17,10 +17,13 @@ import retrofit.http.Query;
 
 public class ArduinoConnection {
     private static final String PROTOCOL = "http://";
+    private static final String TAG = "ArduinoConnection";
     private static ArduinoConnection instance = new ArduinoConnection();
     private Callback successfulSetCallback;
     private Callback serverBusyCallback;
     private Callback exceptionCallback;
+    private Callback serverFetchCallback;
+
     private String serverResponse;
     final OkHttpClient client = new OkHttpClient();
     Retrofit retrofit;
@@ -45,8 +48,7 @@ public class ArduinoConnection {
             public void onResponse(final Response<ResponseBody> response, final Retrofit retrofit) {
                 try {
                     serverResponse = new String(response.body().bytes());
-                    fireCallback(successfulSetCallback, serverResponse);
-
+                    fireCallback(serverFetchCallback, serverResponse);
                 } catch (IOException e) {
                     fireCallback(exceptionCallback, "IOException occurred !");
                 }
@@ -66,9 +68,11 @@ public class ArduinoConnection {
             public void onResponse(final Response<ResponseBody> response, final Retrofit retrofit) {
                 try {
                     serverResponse = new String(response.body().bytes());
-                    if (serverResponse.equals("BUSY")) {
+                    if (serverResponse.toUpperCase().equals("BUSY")) {
+                        Log.e(TAG, "Response: server is busy!");
                         fireCallback(serverBusyCallback, serverResponse);
-                    } else if (serverResponse.equals("OK")) {
+                    } else if (serverResponse.toUpperCase().equals("OK")) {
+                        Log.e(TAG, serverResponse );
                         fireCallback(successfulSetCallback, serverResponse);
                     }
                 } catch (IOException e) {
@@ -85,7 +89,9 @@ public class ArduinoConnection {
     }
 
 
-
+public void setSuccessfulFetchCallback(final Callback fetchCallback) {
+    this.serverFetchCallback = fetchCallback;
+}
     public void setServerBusyCallback(final Callback busyCallback){
         this.serverBusyCallback = busyCallback;
     }
@@ -98,15 +104,10 @@ public class ArduinoConnection {
         this.exceptionCallback = exceptionCallback;
     }
 
-
     private void fireCallback(Callback callback, final String message) {
         if (callback != null) {
                 callback.execute(message);
         }
-    }
-
-    private void logException(Exception e) {
-        Log.e("ArduinoConnection", e.getMessage(), e);
     }
 
     public interface Callback {
